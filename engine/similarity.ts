@@ -1,4 +1,4 @@
-import { generateTextEmbedding, convertEmbeddingToLatLon, loadModel, cachedEmbeddingsStore } from './model';
+import { generateTextEmbedding, convertEmbeddingToLatLon, loadModel, embeddingsCacheStore } from './model';
 
 export function calculateCosineSimilarity(vectorA: number[], vectorB: number[]): number {
     const dotProduct = vectorA.reduce((sum, value, index) => sum + value * vectorB[index], 0);
@@ -12,12 +12,12 @@ export async function findMostSimilarArticle(inputText: string, articles: string
     console.log('현재 리소스 사용량 :');
 
     let inputVector;
-    if (cachedEmbeddingsStore[inputText]) {
-        inputVector = cachedEmbeddingsStore[inputText].embedding;
+    if (embeddingsCacheStore[inputText]) {
+        inputVector = embeddingsCacheStore[inputText].embedding;
     } else {
         inputVector = await generateTextEmbedding(model, inputText);
         const latLon = convertEmbeddingToLatLon(inputVector);
-        cachedEmbeddingsStore[inputText] = { embedding: inputVector, latitude: latLon.latitude, longitude: latLon.longitude };
+        embeddingsCacheStore[inputText] = { embedding: inputVector, latitude: latLon.latitude, longitude: latLon.longitude };
     }
 
     let mostSimilarArticle: string | null = null;
@@ -27,13 +27,13 @@ export async function findMostSimilarArticle(inputText: string, articles: string
         const article = articles[i];
         let articleVector;
 
-        if (cachedEmbeddingsStore[article]) {
-            articleVector = cachedEmbeddingsStore[article].embedding;
+        if (embeddingsCacheStore[article]) {
+            articleVector = embeddingsCacheStore[article].embedding;
         } else {
             try {
                 articleVector = await generateTextEmbedding(model, article);
                 const latLon = convertEmbeddingToLatLon(articleVector);
-                cachedEmbeddingsStore[article] = { embedding: articleVector, latitude: latLon.latitude, longitude: latLon.longitude };
+                embeddingsCacheStore[article] = { embedding: articleVector, latitude: latLon.latitude, longitude: latLon.longitude };
             } catch (error) {
                 console.error(`임베딩 중 오류가 발생하였습니다. : "${article.substring(0, 30)}..."`, error);
                 continue;
