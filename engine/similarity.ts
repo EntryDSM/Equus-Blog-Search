@@ -12,44 +12,38 @@ export async function findMostSimilarArticle(inputText: string, articles: string
     console.log('현재 리소스 사용량 :');
 
     let inputVector;
-    let inputLatLon;
-
     if (cachedEmbeddingsStore[inputText]) {
         inputVector = cachedEmbeddingsStore[inputText].embedding;
-        inputLatLon = { latitude: cachedEmbeddingsStore[inputText].latitude, longitude: cachedEmbeddingsStore[inputText].longitude };
     } else {
         inputVector = await generateTextEmbedding(model, inputText);
-        inputLatLon = convertEmbeddingToLatLon(inputVector);
-        cachedEmbeddingsStore[inputText] = { embedding: inputVector, latitude: inputLatLon.latitude, longitude: inputLatLon.longitude };
+        const latLon = convertEmbeddingToLatLon(inputVector);
+        cachedEmbeddingsStore[inputText] = { embedding: inputVector, latitude: latLon.latitude, longitude: latLon.longitude };
     }
 
     let mostSimilarArticle: string | null = null;
     let highestSimilarity = -1;
 
-    const articleVectors = await Promise.all(articles.map(async (article) => {
+    for (let i = 0; i < articles.length; i++) {
+        const article = articles[i];
+        let articleVector;
+
         if (cachedEmbeddingsStore[article]) {
-            return cachedEmbeddingsStore[article];
+            articleVector = cachedEmbeddingsStore[article].embedding;
         } else {
             try {
-                const embedding = await generateTextEmbedding(model, article);
-                const latLon = convertEmbeddingToLatLon(embedding);
-                cachedEmbeddingsStore[article] = { embedding, latitude: latLon.latitude, longitude: latLon.longitude };
-                return cachedEmbeddingsStore[article];
+                articleVector = await generateTextEmbedding(model, article);
+                const latLon = convertEmbeddingToLatLon(articleVector);
+                cachedEmbeddingsStore[article] = { embedding: articleVector, latitude: latLon.latitude, longitude: latLon.longitude };
             } catch (error) {
                 console.error(`임베딩 중 오류가 발생하였습니다. : "${article.substring(0, 30)}..."`, error);
-                return null;
+                continue;
             }
         }
-    }));
 
-    for (let i = 0; i < articles.length; i++) {
-        const articleData = articleVectors[i];
-        if (articleData) {
-            const similarity = calculateCosineSimilarity(inputVector, articleData.embedding);
-            if (similarity > highestSimilarity) {
-                highestSimilarity = similarity;
-                mostSimilarArticle = articles[i];
-            }
+        const similarity = calculateCosineSimilarity(inputVector, articleVector);
+        if (similarity > highestSimilarity) {
+            highestSimilarity = similarity;
+            mostSimilarArticle = article;
         }
     }
 
