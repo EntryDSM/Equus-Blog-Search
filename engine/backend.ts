@@ -25,39 +25,48 @@ export function logMemoryUsage(): void {
 	maxMemoryUsage.heapUsed = Math.max(maxMemoryUsage.heapUsed, memoryUsage.heapUsed);
 	maxMemoryUsage.external = Math.max(maxMemoryUsage.external, memoryUsage.external);
 
-	console.log(`Node JS 메모리 사용량:
-    RSS: ${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB
-    Heap Total: ${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB
-    Heap Used: ${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB
-    External: ${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB
+	console.log(`\nNode.js 메모리 사용량:
+  RSS: ${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB
+  Heap Total: ${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB
+  Heap Used: ${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB
+  External: ${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB
   `);
 
 	console.log(`최고 메모리 사용량:
-    RSS: ${(maxMemoryUsage.rss / 1024 / 1024).toFixed(2)} MB
-    Heap Total: ${(maxMemoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB
-    Heap Used: ${(maxMemoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB
-    External: ${(maxMemoryUsage.external / 1024 / 1024).toFixed(2)} MB
+  RSS: ${(maxMemoryUsage.rss / 1024 / 1024).toFixed(2)} MB
+  Heap Total: ${(maxMemoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB
+  Heap Used: ${(maxMemoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB
+  External: ${(maxMemoryUsage.external / 1024 / 1024).toFixed(2)} MB
   `);
 }
 
+let lastCpuUsage = process.cpuUsage();
+
 export function logCpuUsage(): void {
-	const startUsage = process.cpuUsage();
 	const LOG_DELAY_MS = 1000;
 
 	setTimeout(() => {
-		const endUsage = process.cpuUsage(startUsage);
+		const currentCpuUsage = process.cpuUsage(lastCpuUsage);
+		lastCpuUsage = process.cpuUsage();
 
-		maxCpuUsage.user = Math.max(maxCpuUsage.user, endUsage.user);
-		maxCpuUsage.system = Math.max(maxCpuUsage.system, endUsage.system);
+		maxCpuUsage.user = Math.max(maxCpuUsage.user, currentCpuUsage.user);
+		maxCpuUsage.system = Math.max(maxCpuUsage.system, currentCpuUsage.system);
 
-		console.log(`CPU 사용량:
-      User: ${(endUsage.user / 1_000_000).toFixed(2)} seconds
-      System: ${(endUsage.system / 1_000_000).toFixed(2)} seconds
-    `);
+		console.log(`\nCPU 사용량 (최근 1초):
+  User: ${(currentCpuUsage.user / 1_000_000).toFixed(2)} 초
+  System: ${(currentCpuUsage.system / 1_000_000).toFixed(2)} 초
+  `);
 
 		console.log(`최고 CPU 사용량:
-      User: ${(maxCpuUsage.user / 1_000_000).toFixed(2)} seconds
-      System: ${(maxCpuUsage.system / 1_000_000).toFixed(2)} seconds
-    `);
+  User: ${(maxCpuUsage.user / 1_000_000).toFixed(2)} 초
+  System: ${(maxCpuUsage.system / 1_000_000).toFixed(2)} 초
+  `);
 	}, LOG_DELAY_MS);
+}
+
+export function startLoggingResources(intervalMs: number = 5000): void {
+	setInterval(() => {
+		logMemoryUsage();
+		logCpuUsage();
+	}, intervalMs);
 }
