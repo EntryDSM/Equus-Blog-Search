@@ -1,11 +1,9 @@
-import { initializeBackend, startLoggingResources } from './backend';
+import { initializeBackend } from './backend';
 import { loadModel, processEmbeddings, findMostSimilarArticle } from './embedding';
 
 async function main() {
     try {
         await initializeBackend();
-
-        startLoggingResources();
 
         const model = await loadModel();
 
@@ -18,7 +16,7 @@ async function main() {
             "Article 5: Baseball is a sport that demands quick reflexes and precise hand-eye coordination.",
             "Article 6: Swimming is an excellent full-body workout that improves endurance and strength.",
             "Article 7: Ice hockey players wear protective gear to stay safe during fast-paced, physical games.",
-            "Article 8: Golf is a sport that combines skill, precision, and patience to achieve success on the green.",
+            "Artilcle 8: Golf is a sport that combines skill, precision, and patience to achieve success on the green.",
             "Article 9: Cycling is a popular activity that promotes cardiovascular health and environmental sustainability.",
             "Article 10: Volleyball requires teamwork and quick reflexes, as players must react rapidly to the ball.",
             "Article 11: Machine learning is best!",
