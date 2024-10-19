@@ -1,30 +1,41 @@
 import * as use from '@tensorflow-models/universal-sentence-encoder';
-import { LatLon, EmbeddingData, ArticleData } from './types';
+import { emit } from './handler';
+import { ContentData } from './types';
 
 let cachedModel: use.UniversalSentenceEncoder | null = null;
-let embeddingsCache: Record<string, EmbeddingData> = {};
+let embeddingsCache: Record<string, number[]> = {};
 
 export async function loadModel(): Promise<use.UniversalSentenceEncoder> {
     if (!cachedModel) {
+        emit('modelLoading');
         cachedModel = await use.load();
-        console.log('Universal Sentence Encoder 모델이 로드되었습니다.');
+        emit('modelLoaded', cachedModel);
     }
     return cachedModel;
 }
 
-export async function generateTextEmbedding(
-    text: string
-): Promise<number[]> {
+export async function generateTextEmbedding(text: string): Promise<number[]> {
+    if (embeddingsCache[text]) {
+        emit('embeddingCacheHit', { text, embedding: embeddingsCache[text] });
+        return embeddingsCache[text];
+    }
+
     if (!cachedModel) {
         throw new Error('모델이 로드되지 않았습니다.');
     }
+
     try {
+        emit('embeddingGenerationStarted', text);
         const embeddingTensor = await cachedModel.embed(text);
         const [embeddingArray] = await embeddingTensor.array();
         embeddingTensor.dispose();
+        
+        embeddingsCache[text] = embeddingArray;
+
+        emit('embeddingGenerated', { text, embeddingArray });
         return embeddingArray;
     } catch (error) {
-        console.error(`텍스트 "${text}"의 임베딩 생성 중 오류 발생.`, error);
+        emit('embeddingGenerationFailed', { text, error });
         throw new Error('임베딩 생성에 실패했습니다.');
     }
 }
@@ -32,37 +43,6 @@ export async function generateTextEmbedding(
 export function calculateCosineSimilarity(vectorA: number[], vectorB: number[]): number {
     const dotProduct = vectorA.reduce((sum, value, index) => sum + value * vectorB[index], 0);
     const magnitudeA = Math.sqrt(vectorA.reduce((sum, value) => sum + value * value, 0));
-    const magnitudeB = Math.sqrt(vectorB.reduce((sum, value) => sum + value * value, 0));
+    const magnitudeB = Math.sqrt(vectorB.reduce((sum, val) => sum + val * val, 0));
     return dotProduct / (magnitudeA * magnitudeB);
 }
-
-export async function findMostSimilarArticle(
-    inputEmbedding: number[],
-    articlesData: ArticleData[]
-): Promise<string | null> {
-    let mostSimilarArticle: string | null = null;
-    let highestSimilarity = -1;
-
-    for (const { text, embeddingData } of articlesData) {
-        const similarity = calculateCosineSimilarity(inputEmbedding, embeddingData.embedding);
-        if (similarity > highestSimilarity) {
-            highestSimilarity = similarity;
-            mostSimilarArticle = text;
-        }
-    }
-
-    return mostSimilarArticle;
-}
-
-export function getCachedEmbedding(text: string): EmbeddingData | null {
-    return embeddingsCache[text] || null;
-}
-
-export async function createEmbeddingAndCache(text: string): Promise<EmbeddingData> {
-    const embedding = await generateTextEmbedding(text);
-    const embeddingData: EmbeddingData = { embedding, latitude: 0, longitude: 0 };
-    embeddingsCache[text] = embeddingData;
-    return embeddingData;
-}
-
-export const embeddingsCacheStore = embeddingsCache;
