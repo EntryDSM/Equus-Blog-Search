@@ -13,17 +13,19 @@ export async function loadModel(): Promise<use.UniversalSentenceEncoder> {
 }
 
 export async function generateTextEmbedding(
-    model: use.UniversalSentenceEncoder,
     text: string
 ): Promise<number[]> {
+    if (!cachedModel) {
+        throw new Error('모델이 로드되지 않았습니다.');
+    }
     try {
-        const embeddingTensor = await model.embed(text);
+        const embeddingTensor = await cachedModel.embed(text);
         const [embeddingArray] = await embeddingTensor.array();
         embeddingTensor.dispose();
         return embeddingArray;
     } catch (error) {
-        console.error(`Error generating embedding for text: "${text}".`, error);
-        throw new Error('임베딩 생성을 다시 시도하십시오.');
+        console.error(`텍스트 "${text}"의 임베딩 생성 중 오류 발생.`, error);
+        throw new Error('임베딩 생성에 실패했습니다.');
     }
 }
 
@@ -52,51 +54,15 @@ export async function findMostSimilarArticle(
     return mostSimilarArticle;
 }
 
-export async function processEmbeddings(
-    inputText: string,
-    articles: string[],
-    model: use.UniversalSentenceEncoder
-): Promise<{ inputEmbedding: number[]; articlesData: ArticleData[] }> {
-    const inputEmbedding = await getEmbeddingArray(inputText, model);
-    const articlesData = await processArticlesEmbeddings(articles, model);
-    return { inputEmbedding, articlesData };
-}
-
-async function processArticlesEmbeddings(
-    articles: string[],
-    model: use.UniversalSentenceEncoder
-): Promise<ArticleData[]> {
-    return await Promise.all(
-        articles.map(async (article) => {
-            const embeddingData = await getEmbedding(article, model);
-            return { text: article, embeddingData };
-        })
-    );
-}
-
-async function getEmbedding(text: string, model: use.UniversalSentenceEncoder): Promise<EmbeddingData> {
-    const cachedEmbedding = getCachedEmbedding(text);
-    if (cachedEmbedding) {
-        return cachedEmbedding;
-    }
-    return await createEmbeddingAndCache(text, model);
-}
-
-async function getEmbeddingArray(text: string, model: use.UniversalSentenceEncoder): Promise<number[]> {
-    const embeddingData = await getEmbedding(text, model);
-    return embeddingData.embedding;
-}
-
-function getCachedEmbedding(text: string): EmbeddingData | null {
+export function getCachedEmbedding(text: string): EmbeddingData | null {
     return embeddingsCache[text] || null;
 }
 
-async function createEmbeddingAndCache(text: string, model: use.UniversalSentenceEncoder): Promise<EmbeddingData> {
-    const embedding = await generateTextEmbedding(model, text);
+export async function createEmbeddingAndCache(text: string): Promise<EmbeddingData> {
+    const embedding = await generateTextEmbedding(text);
     const embeddingData: EmbeddingData = { embedding, latitude: 0, longitude: 0 };
     embeddingsCache[text] = embeddingData;
     return embeddingData;
 }
-
 
 export const embeddingsCacheStore = embeddingsCache;
