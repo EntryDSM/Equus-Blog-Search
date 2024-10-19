@@ -1,4 +1,4 @@
-import { loadModel, generateTextEmbedding } from './../embedding';
+import { loadModel, generateTextEmbedding } from '../embedding';
 
 export async function handleArticleAddedEvent(article: { id: string; text: string }) {
     try {
