@@ -10,9 +10,20 @@ interface LogEntry {
 }
 
 let logMemory: LogEntry[] = [];
+let logIndex = 0;
+
+function addLogToMemory(log: LogEntry, maxLogs: number): void {
+    if (logMemory.length < maxLogs) {
+        logMemory.push(log);
+    } else {
+        logMemory[logIndex] = log;
+    }
+    logIndex = (logIndex + 1) % maxLogs;
+}
 
 function formatLog(level: logType, message: string, location: string): LogEntry {
-    const { color, label } = logTypeDetails[level] || logTypeDetails[logType.Info];
+    const logDetail = logTypeDetails[level] || logTypeDetails[logType.Info];
+    const { color, label } = logDetail;
     const timestamp = new Date().toISOString();
     const config = getLoggerConfig();
     const logMessage = `[${timestamp}] ${color}[${label}]${config.resetColor}: ${message} (${location})`;
@@ -24,19 +35,22 @@ function formatLog(level: logType, message: string, location: string): LogEntry 
 }
 
 function log(level: logType, message: string, ...args: any[]): void {
-    const location = getStackTrace();
-    const { summary, details } = formatLog(level, message, location);
     const config = getLoggerConfig();
+    let location = getStackTrace();
+
+    const { summary, details } = formatLog(level, message, location);
 
     console.log(summary);
 
     if (config.detailedViewEnabled) {
-        console.log(`${details}\n${args.map(prettyFormat).join('\n')}`);
+        const formattedArgs = args.map(prettyFormat).join('\n');
+        console.log(`${details}\n${formattedArgs}`);
+        addLogToMemory({ summary, details: `${details}\n${formattedArgs}` }, config.maxLogs);
+    } else {
+        addLogToMemory({ summary, details }, config.maxLogs);
     }
-
-    if (logMemory.length >= config.maxLogs) logMemory.shift();
-    logMemory.push({ summary, details: `${details}\n${args.map(prettyFormat).join('\n')}` });
 }
+
 
 export function enableDetailedView(enabled: boolean): void {
     configureLogger({ detailedViewEnabled: enabled });

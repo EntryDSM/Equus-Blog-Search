@@ -21,9 +21,11 @@ function extractFileLocation(callerInfo: string): string {
     const location = callerInfo.substring(start + 1, end);
     const parts = location.split(':');
 
-    if (parts.length >= 2) {
-        const [file, line] = parts;
-        return `${file}:${line}`;
+    if (parts.length >= 3) {
+        const filePath = parts.slice(0, -2).join(':');
+        const lineNumber = parts[parts.length - 2]; 
+        const columnNumber = parts[parts.length - 1];
+        return `${filePath}:${lineNumber}:${columnNumber}`;
     }
 
     return '알 수 없는 위치';
