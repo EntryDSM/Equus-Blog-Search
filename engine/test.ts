@@ -1,6 +1,8 @@
-import { loadModel, generateTextEmbedding } from './embedding';
-import { initializeBackend } from './backend';
-import * as readline from 'readline';
+import { loadModel } from './core/model/modelLoader';
+import { generateTextEmbedding } from './core/function/main/embeddingGenerator';
+import { initializeBackend } from './tfjs/initializeBackend';
+import { calculateCosineSimilarity } from './core/function/utils/cosineSimilarity';
+import logger from './log/logger';
 
 async function main() {
 
@@ -17,12 +19,9 @@ async function main() {
         content.embeddingData.embedding = await generateTextEmbedding(content.text);
     }
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
+    logger.info(`${contentsData[0].text}과 ${contentsData[1].text}의 유사도 ${calculateCosineSimilarity(contentsData[0].embeddingData.embedding, contentsData[1].embeddingData.embedding).toString()}`);
 }
 
 main().catch((error) => {
-    console.error('오류 발생:', error);
+    logger.error('An error occurred during the execution of the main function.', error);
 });

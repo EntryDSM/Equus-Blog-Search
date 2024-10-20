@@ -1,25 +1,17 @@
-import * as use from '@tensorflow-models/universal-sentence-encoder';
-import { emit } from './handler';
-import logger from './log/logger';
+import { getCachedModel } from '../../model/modelLoader';
+import { emit } from '../../../event/handler';
+import logger from '../../../log/logger';
 
-let cachedModel: use.UniversalSentenceEncoder | null = null;
 let embeddingsCache: Record<string, number[]> = {};
-
-export async function loadModel(): Promise<use.UniversalSentenceEncoder> {
-    if (!cachedModel) {
-        emit('modelLoading');
-        cachedModel = await use.load();
-        emit('modelLoaded', cachedModel);
-    }
-    return cachedModel;
-}
 
 export async function generateTextEmbedding(text: string): Promise<number[]> {
     if (embeddingsCache[text]) {
         emit('embeddingCacheHit', { text, embedding: embeddingsCache[text] });
+        logger.info(`텍스트 "${text}"에 대한 임베딩을 캐시에서 찾았습니다.`);
         return embeddingsCache[text];
     }
 
+    const cachedModel = getCachedModel();
     if (!cachedModel) {
         throw logger.error('모델이 로드되지 않았습니다.');
     }
@@ -33,16 +25,10 @@ export async function generateTextEmbedding(text: string): Promise<number[]> {
         embeddingsCache[text] = embeddingArray;
 
         emit('embeddingGenerated', { text, embeddingArray });
+        logger.info(`텍스트 "${text}"에 대한 임베딩을 생성했습니다.`);
         return embeddingArray;
     } catch (error) {
         emit('embeddingGenerationFailed', { text, error });
         throw new logger.error('임베딩 생성에 실패했습니다.');
     }
-}
-
-export function calculateCosineSimilarity(vectorA: number[], vectorB: number[]): number {
-    const dotProduct = vectorA.reduce((sum, value, index) => sum + value * vectorB[index], 0);
-    const magnitudeA = Math.sqrt(vectorA.reduce((sum, value) => sum + value * value, 0));
-    const magnitudeB = Math.sqrt(vectorB.reduce((sum, val) => sum + val * val, 0));
-    return dotProduct / (magnitudeA * magnitudeB);
 }
