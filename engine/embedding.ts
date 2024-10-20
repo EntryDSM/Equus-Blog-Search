@@ -1,6 +1,5 @@
 import * as use from '@tensorflow-models/universal-sentence-encoder';
 import { emit } from './handler';
-import { ContentData } from './types';
 
 let cachedModel: use.UniversalSentenceEncoder | null = null;
 let embeddingsCache: Record<string, number[]> = {};
