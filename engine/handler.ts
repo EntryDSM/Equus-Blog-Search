@@ -1,4 +1,5 @@
 import { loadModel, generateTextEmbedding } from './embedding';
+import logger from './logger';
 
 const eventListeners: Record<string, Function[]> = {};
 
@@ -24,24 +25,24 @@ export async function handleContentAddedEvent(content: { id: string; text: strin
         const embedding = await generateTextEmbedding(content.text);
         emit('embeddingGenerated', { contentId: content.id, embedding });
 
-        console.log(`콘텐츠 ID: ${content.id} 임베딩:`, embedding);
+        logger.info(`콘텐츠 ID: ${content.id} 임베딩:`, embedding);
     } catch (error) {
-        console.error('임베딩 생성 중 오류 발생:', error);
+        logger.error('임베딩 생성 중 오류 발생:', error);
     }
 }
 
 on('embeddingCacheHit', ({ text, embedding }) => {
-    console.log(`텍스트 "${text}"에 대한 캐시 적중. 캐시된 임베딩 사용.`);
+    logger.info(`텍스트 "${text}"에 대한 캐시 적중. 캐시된 임베딩 사용.`);
 });
 
 on('modelLoading', () => {
-    console.log('모델을 로드 중...');
+    logger.info('모델을 로드 중...');
 });
 
 on('modelLoaded', (model) => {
-    console.log('모델이 로드되었습니다:', model);
+    logger.info('모델이 로드되었습니다:', model);
 });
 
 on('embeddingGenerated', (data) => {
-    console.log(`콘텐츠 ID ${data.contentId}에 대한 임베딩이 생성되었습니다:`, data.embedding);
+    logger.info(`콘텐츠 ID ${data.contentId}에 대한 임베딩이 생성되었습니다:`, data.embedding);
 });

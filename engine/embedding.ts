@@ -1,5 +1,6 @@
 import * as use from '@tensorflow-models/universal-sentence-encoder';
 import { emit } from './handler';
+import logger from './logger';
 
 let cachedModel: use.UniversalSentenceEncoder | null = null;
 let embeddingsCache: Record<string, number[]> = {};
@@ -20,7 +21,7 @@ export async function generateTextEmbedding(text: string): Promise<number[]> {
     }
 
     if (!cachedModel) {
-        throw new Error('모델이 로드되지 않았습니다.');
+        throw logger.error('모델이 로드되지 않았습니다.');
     }
 
     try {
@@ -35,7 +36,7 @@ export async function generateTextEmbedding(text: string): Promise<number[]> {
         return embeddingArray;
     } catch (error) {
         emit('embeddingGenerationFailed', { text, error });
-        throw new Error('임베딩 생성에 실패했습니다.');
+        throw new logger.error('임베딩 생성에 실패했습니다.');
     }
 }
 

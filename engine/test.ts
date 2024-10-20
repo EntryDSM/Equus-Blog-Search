@@ -1,24 +1,8 @@
 import { loadModel, generateTextEmbedding } from './embedding';
 import { initializeBackend } from './backend';
-import { on } from './handler';
 import * as readline from 'readline';
 
 async function main() {
-    on('backendInitialized', () => {
-        console.log('Backend initialized successfully.');
-    });
-
-    on('modelLoading', () => {
-        console.log('모델 로드 중...');
-    });
-
-    on('modelLoaded', () => {
-        console.log('모델이 성공적으로 로드되었습니다.');
-    });
-
-    on('embeddingGenerated', ({ text, embeddingArray }) => {
-        console.log(` "${text}"가 임베딩 됨`, embeddingArray);
-    });
 
     await initializeBackend();
     await loadModel();
