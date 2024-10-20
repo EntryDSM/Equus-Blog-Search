@@ -11,10 +11,32 @@ let logMemory: { summary: string, details: string }[] = [];
 let detailedViewEnabled = false;
 
 function getStackTrace() {
-    const stack = new Error().stack?.split('\n');
-    const callerInfo = stack && stack[3] ? stack[3].trim() : 'unknown location';
-    const match = callerInfo.match(/\((.*):(\d+):(\d+)\)/);
-    return match ? `${match[1]}:${match[2]}` : 'unknown location';
+    const stack = new Error().stack || '';
+    const stackLines = stack.split('\n');
+
+    if (stackLines.length < 4) {
+        return 'unknown location';
+    }
+
+    const callerInfo = stackLines[3].trim();
+    return extractFileLocation(callerInfo);
+}
+
+function extractFileLocation(callerInfo: string) {
+    const start = callerInfo.indexOf('(');
+    const end = callerInfo.indexOf(')');
+
+    if (start !== -1 && end !== -1) {
+        const location = callerInfo.substring(start + 1, end);
+        const parts = location.split(':');
+
+        if (parts.length >= 2) {
+            const file = parts[0];
+            const line = parts[1];
+            return `${file}:${line}`;
+        }
+    }
+    return 'unknown location';
 }
 
 function prettyFormat(data: any) {
