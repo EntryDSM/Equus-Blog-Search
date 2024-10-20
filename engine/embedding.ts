@@ -1,6 +1,6 @@
 import * as use from '@tensorflow-models/universal-sentence-encoder';
 import { emit } from './handler';
-import logger from './logger';
+import logger from './log/logger';
 
 let cachedModel: use.UniversalSentenceEncoder | null = null;
 let embeddingsCache: Record<string, number[]> = {};

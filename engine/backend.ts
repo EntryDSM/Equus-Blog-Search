@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs-node';
 import { emit } from './handler';
-import logger from './logger';
+import logger from './log/logger';
 
 export async function initializeBackend(): Promise<void> {
     emit('backendInitializing');

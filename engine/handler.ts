@@ -1,5 +1,5 @@
 import { loadModel, generateTextEmbedding } from './embedding';
-import logger from './logger';
+import logger from './log/logger';
 
 const eventListeners: Record<string, Function[]> = {};
 
